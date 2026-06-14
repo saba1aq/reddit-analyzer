@@ -24,8 +24,8 @@ class DatabaseSettings(BaseConfigSettings):
     @property
     def url(self) -> str:
         return (
-            f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}"
-            f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
+            f"postgresql+psycopg://{self.user}:{self.password}"
+            f"@{self.host}:{self.port}/{self.name}"
         )
 
 class RedditSettings(BaseConfigSettings):
@@ -33,6 +33,7 @@ class RedditSettings(BaseConfigSettings):
     password: Optional[str] = Field(default=None, validation_alias="REDDIT_PASSWORD")
 
 class Settings(BaseConfigSettings):
+    database: DatabaseSettings = DatabaseSettings()
     reddit: RedditSettings = RedditSettings()
 
 

@@ -1,24 +1,24 @@
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from src.domain.interfaces.persistence import IUnitOfWork
 
 
 class SQLAlchemyUnitOfWork(IUnitOfWork):
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(self, session: Session) -> None:
         self._session = session
 
-    async def __aenter__(self) -> "SQLAlchemyUnitOfWork":
+    def __enter__(self) -> "SQLAlchemyUnitOfWork":
         return self
 
-    async def __aexit__(self, exc_type, exc, tb) -> None:
+    def __exit__(self, exc_type, exc, tb) -> None:
         if exc_type is not None:
-            await self.rollback()
+            self.rollback()
 
-    async def commit(self) -> None:
-        await self._session.commit()
+    def commit(self) -> None:
+        self._session.commit()
 
-    async def rollback(self) -> None:
-        await self._session.rollback()
+    def rollback(self) -> None:
+        self._session.rollback()
 
-    async def flush(self) -> None:
-        await self._session.flush()
+    def flush(self) -> None:
+        self._session.flush()
