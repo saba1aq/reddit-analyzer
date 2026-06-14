@@ -77,5 +77,5 @@ old.env
 .claude
 
 secrets/
-exampledownloaded_files/
+example/
 downloaded_files/

@@ -33,9 +33,29 @@ class RedditSettings(BaseConfigSettings):
     email: Optional[str] = Field(default=None, validation_alias="REDDIT_EMAIL")
     password: Optional[str] = Field(default=None, validation_alias="REDDIT_PASSWORD")
 
+class BrokerSettings(BaseConfigSettings):
+    host: str = Field(default="localhost", validation_alias="RABBITMQ_HOST")
+    port: int = Field(default=5672, validation_alias="RABBITMQ_PORT")
+    user: str = Field(default="guest", validation_alias="RABBITMQ_USER")
+    password: str = Field(default="guest", validation_alias="RABBITMQ_PASSWORD")
+
+    @property
+    def url(self) -> str:
+        return f"amqp://{self.user}:{self.password}@{self.host}:{self.port}//"
+
+
+class ScraperSettings(BaseConfigSettings):
+    pause_min: float = Field(default=180.0, validation_alias="SCRAPER_PAUSE_MIN")
+    pause_max: float = Field(default=300.0, validation_alias="SCRAPER_PAUSE_MAX")
+    max_posts: Optional[int] = Field(default=None, validation_alias="SCRAPER_MAX_POSTS")
+    proxy: Optional[str] = Field(default=None, validation_alias="SCRAPER_PROXY")
+
+
 class Settings(BaseConfigSettings):
     database: DatabaseSettings = DatabaseSettings()
     reddit: RedditSettings = RedditSettings()
+    broker: BrokerSettings = BrokerSettings()
+    scraper: ScraperSettings = ScraperSettings()
 
 
 settings = Settings()
