@@ -1,0 +1,65 @@
+from datetime import datetime
+from typing import Optional
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import DateTime, Boolean, func, MetaData
+import uuid
+from sqlalchemy import String
+from sqlalchemy.dialects.postgresql import UUID
+
+convention = {
+    "ix": "ix_%(column_0_label)s",
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(constraint_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s"
+}
+
+class Base(DeclarativeBase):
+    metadata = MetaData(naming_convention=convention)
+    
+
+class UUIDMixin:
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), 
+        primary_key=True, 
+        default=uuid.uuid4, 
+        unique=True, 
+        nullable=False
+    )
+
+class IntegerIDMixin:
+    id: Mapped[int] = mapped_column(
+        String, 
+        primary_key=True, 
+        autoincrement=True, 
+        unique=True, 
+        nullable=False
+    )
+
+class TimestampMixin:
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), 
+        server_default=func.now(),  
+        nullable=False
+    )
+    
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(), 
+        nullable=False
+    )
+
+
+class SoftDeleteMixin:   
+    is_deleted: Mapped[bool] = mapped_column(
+        Boolean, 
+        default=False, 
+        nullable=False,
+        index=True 
+    )
+    
+    deleted_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), 
+        nullable=True
+    )
