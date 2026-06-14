@@ -49,6 +49,7 @@ class ScraperSettings(BaseConfigSettings):
     pause_max: float = Field(default=300.0, validation_alias="SCRAPER_PAUSE_MAX")
     max_posts: Optional[int] = Field(default=None, validation_alias="SCRAPER_MAX_POSTS")
     proxy: Optional[str] = Field(default=None, validation_alias="SCRAPER_PROXY")
+    xvfb: bool = Field(default=False, validation_alias="SCRAPER_XVFB")
 
 
 class Settings(BaseConfigSettings):

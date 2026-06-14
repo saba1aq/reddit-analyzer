@@ -30,7 +30,7 @@ _browser: Optional[BrowserSession] = None
 @worker_process_init.connect
 def _init_browser(**kwargs) -> None:
     global _browser
-    _browser = BrowserSession(proxy=settings.scraper.proxy)
+    _browser = BrowserSession(proxy=settings.scraper.proxy, xvfb=settings.scraper.xvfb)
     _browser.__enter__()
 
 
@@ -45,6 +45,6 @@ def _close_browser(**kwargs) -> None:
 def get_browser() -> BrowserSession:
     global _browser
     if _browser is None:
-        _browser = BrowserSession(proxy=settings.scraper.proxy)
+        _browser = BrowserSession(proxy=settings.scraper.proxy, xvfb=settings.scraper.xvfb)
         _browser.__enter__()
     return _browser

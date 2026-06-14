@@ -1,3 +1,15 @@
+x-backend: &backend
+  build:
+    context: .
+    dockerfile: backend/Dockerfile
+  image: reddit-backend
+  env_file: .env
+  environment:
+    POSTGRES_HOST: database
+    RABBITMQ_HOST: rabbitmq
+  networks:
+    - reddit-network
+
 services:
   database:
     container_name: reddit-database
@@ -56,6 +68,44 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
+
+  migrate:
+    <<: *backend
+    container_name: reddit-migrate
+    command: [ "alembic", "upgrade", "head" ]
+    restart: "no"
+    depends_on:
+      database:
+        condition: service_healthy
+
+  worker:
+    <<: *backend
+    container_name: reddit-worker
+    command: [ "celery", "-A", "src.infrastructure.tasks.celery_app", "worker", "--pool=solo", "--loglevel=info" ]
+    restart: unless-stopped
+    shm_size: 2gb
+    environment:
+      POSTGRES_HOST: database
+      RABBITMQ_HOST: rabbitmq
+      SCRAPER_XVFB: "true"
+    depends_on:
+      database:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  beat:
+    <<: *backend
+    container_name: reddit-beat
+    command: [ "celery", "-A", "src.infrastructure.tasks.celery_app", "beat", "--loglevel=info" ]
+    restart: unless-stopped
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
 
 
 volumes:

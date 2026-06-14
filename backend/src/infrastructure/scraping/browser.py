@@ -4,10 +4,12 @@ from seleniumbase import SB
 
 
 class BrowserSession:
-    def __init__(self, proxy: Optional[str] = None) -> None:
+    def __init__(self, proxy: Optional[str] = None, xvfb: bool = False) -> None:
         kwargs = dict(uc=True, test=True, locale_code="en")
         if proxy:
             kwargs["proxy"] = proxy
+        if xvfb:
+            kwargs["xvfb"] = True
         self._cm = SB(**kwargs)
         self.sb = None
         self._activated = False

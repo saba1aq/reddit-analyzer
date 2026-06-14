@@ -6,6 +6,7 @@ from src.application.enrichment import enrich_post
 from src.domain.entities import Subreddit
 from src.infrastructure.persistence.unit_of_work import SQLAlchemyUnitOfWork
 from src.infrastructure.scraping import BrowserSession
+from src.settings import settings
 
 
 def cmd_discover(args) -> int:
@@ -13,7 +14,7 @@ def cmd_discover(args) -> int:
         uow.subreddits.upsert_many([Subreddit(name=args.subreddit)])
         uow.commit()
         sub = next(s for s in uow.subreddits.list_enabled() if s.name == args.subreddit)
-        with BrowserSession(proxy=args.proxy) as browser:
+        with BrowserSession(proxy=args.proxy, xvfb=settings.scraper.xvfb) as browser:
             new_ids = discover_subreddit(uow, browser, sub, max_posts=args.max_posts)
     print(f"discovered new posts: {len(new_ids)}")
     return 0
@@ -24,7 +25,7 @@ def cmd_enrich(args) -> int:
         pending = uow.posts.list_pending(args.limit)
     print(f"pending posts: {len(pending)}")
 
-    with BrowserSession(proxy=args.proxy) as browser:
+    with BrowserSession(proxy=args.proxy, xvfb=settings.scraper.xvfb) as browser:
         for post in pending:
             with SQLAlchemyUnitOfWork() as uow:
                 fresh = uow.posts.get(post.id)
