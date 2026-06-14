@@ -1,0 +1,8 @@
+sqlalchemy==2.0.46
+psycopg[binary]==3.3.4
+alembic==1.18.4
+pydantic-settings==2.13.1
+celery==5.6.2
+seleniumbase==4.49.12
+certifi==2026.5.20
+loguru==0.7.3
