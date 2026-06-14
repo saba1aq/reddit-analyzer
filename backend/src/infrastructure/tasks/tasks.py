@@ -3,19 +3,22 @@ import time
 import uuid
 
 from src.application.discovery import discover_subreddit as discover_subreddit_service
+from src.application.enrichment import enrich_post as enrich_post_service
+from src.domain.enums import PostStatus
 from src.infrastructure.persistence.unit_of_work import SQLAlchemyUnitOfWork
 from src.infrastructure.tasks.celery_app import app, get_browser
 from src.settings import settings
 
+_PENDING_LIMIT = 100000
 
-@app.task(
-    name="discovery.dispatch"
-)
+
+@app.task(name="discovery.dispatch")
 def dispatch_discovery() -> int:
     with SQLAlchemyUnitOfWork() as uow:
         subs = [(str(s.id), s.name) for s in uow.subreddits.list_enabled()]
     for sub_id, name in subs:
         discover_subreddit.delay(sub_id, name)
+    dispatch_enrichment.delay()
     return len(subs)
 
 
@@ -38,3 +41,33 @@ def discover_subreddit(self, sub_id: str, name: str) -> int:
     pause = random.uniform(settings.scraper.pause_min, settings.scraper.pause_max)
     time.sleep(pause)
     return len(new_ids)
+
+
+@app.task(name="enrichment.dispatch")
+def dispatch_enrichment() -> int:
+    with SQLAlchemyUnitOfWork() as uow:
+        reddit_ids = [p.reddit_id for p in uow.posts.list_pending(_PENDING_LIMIT)]
+    for reddit_id in reddit_ids:
+        enrich_post.delay(reddit_id)
+    return len(reddit_ids)
+
+
+@app.task(
+    name="enrichment.post",
+    bind=True,
+    autoretry_for=(Exception,),
+    max_retries=2,
+    retry_backoff=True,
+)
+def enrich_post(self, reddit_id: str) -> int:
+    with SQLAlchemyUnitOfWork() as uow:
+        post = uow.posts.get_by_reddit_id(reddit_id)
+        if post is None or post.status == PostStatus.enriched:
+            return 0
+        try:
+            return enrich_post_service(uow, get_browser(), post)
+        except Exception as exc:
+            uow.rollback()
+            uow.posts.mark_failed(post.id, str(exc)[:500])
+            uow.commit()
+            raise

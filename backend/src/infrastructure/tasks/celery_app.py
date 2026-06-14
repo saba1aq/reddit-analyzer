@@ -1,6 +1,7 @@
 from typing import Optional
 
 from celery import Celery
+from celery.schedules import crontab
 from celery.signals import worker_process_init, worker_process_shutdown
 
 from src.infrastructure.scraping import BrowserSession
@@ -15,6 +16,13 @@ app = Celery(
 app.conf.task_ignore_result = True
 app.conf.worker_concurrency = 1
 app.conf.broker_connection_retry_on_startup = True
+app.conf.timezone = "Asia/Almaty"
+app.conf.beat_schedule = {
+    "daily-discovery": {
+        "task": "discovery.dispatch",
+        "schedule": crontab(hour=9, minute=0),
+    },
+}
 
 _browser: Optional[BrowserSession] = None
 

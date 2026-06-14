@@ -3,8 +3,13 @@ from typing import Optional
 from sqlalchemy.orm import Session, sessionmaker
 
 from src.domain.interfaces.persistence import IUnitOfWork
-from src.domain.interfaces.repositories import IPostRepository, ISubredditRepository
+from src.domain.interfaces.repositories import (
+    ICommentRepository,
+    IPostRepository,
+    ISubredditRepository,
+)
 from src.infrastructure.persistence.database import SessionFactory
+from src.infrastructure.persistence.repositories.comment import CommentRepository
 from src.infrastructure.persistence.repositories.post import PostRepository
 from src.infrastructure.persistence.repositories.subreddit import SubredditRepository
 
@@ -15,6 +20,7 @@ class SQLAlchemyUnitOfWork(IUnitOfWork):
         self._session: Optional[Session] = None
         self._subreddits: Optional[ISubredditRepository] = None
         self._posts: Optional[IPostRepository] = None
+        self._comments: Optional[ICommentRepository] = None
 
     def __enter__(self) -> "SQLAlchemyUnitOfWork":
         self._session = self._session_factory()
@@ -27,6 +33,7 @@ class SQLAlchemyUnitOfWork(IUnitOfWork):
         self._session = None
         self._subreddits = None
         self._posts = None
+        self._comments = None
 
     @property
     def session(self) -> Session:
@@ -45,6 +52,12 @@ class SQLAlchemyUnitOfWork(IUnitOfWork):
         if self._posts is None:
             self._posts = PostRepository(self.session)
         return self._posts
+
+    @property
+    def comments(self) -> ICommentRepository:
+        if self._comments is None:
+            self._comments = CommentRepository(self.session)
+        return self._comments
 
     def commit(self) -> None:
         self.session.commit()
