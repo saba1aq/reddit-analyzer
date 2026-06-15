@@ -15,6 +15,8 @@ app = Celery(
 
 app.conf.task_ignore_result = True
 app.conf.worker_concurrency = 1
+app.conf.worker_prefetch_multiplier = 1
+app.conf.broker_heartbeat = 0
 app.conf.broker_connection_retry_on_startup = True
 app.conf.timezone = "Asia/Almaty"
 app.conf.beat_schedule = {
